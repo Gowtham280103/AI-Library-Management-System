@@ -58,3 +58,12 @@ Project structure, Flask starter app, initial MySQL schema, dependencies, docume
 
 ## Security
 Never commit `.env` files, passwords, API keys or secret tokens.
+
+## Day 2 - Git and GitHub Practice
+
+- Verified Git installation and configuration.
+- Initialized and checked the local repository.
+- Practiced staging and committing changes.
+- Connected the local project to GitHub.
+- Practiced pushing updates to the remote repository.
+
