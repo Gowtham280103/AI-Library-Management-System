@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,103 +5,255 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Library Management System</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="{{ url_for('static', filename='js/script.js') }}" defer></script>
 </head>
 <body>
-
 <nav>
-    <h2>📚 AI Library</h2>
+    <h2>AI Library</h2>
     <span>UNAI TECH Virtual Internship 2026</span>
+    <div class="nav-links">
+        <a href="#inventory">Inventory</a>
+        <a href="#borrow">Borrow books</a>
+        <a href="#active-loans">Active loans</a>
+        <a href="#history">History</a>
+    </div>
 </nav>
 
-<div class="container">
-
+<main class="container">
     <header>
-        <p>PROJECT 08 | BOOK MANAGEMENT</p>
+        <p>PROJECT 08 | BOOK AND LOAN MANAGEMENT</p>
         <h1>AI-Enabled Library Management System</h1>
-        <p>Manage your library books efficiently with a simple digital platform.</p>
+        <p>Manage your book collection, track loans and record returns.</p>
     </header>
 
-    <section class="stats">
-        <div class="card">
-            <h3>Total Books</h3>
-            <h2>{{ books|length }}</h2>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="messages" aria-live="polite">
+            {% for category, message in messages %}
+            <p class="message {{ category }}" role="{{ 'alert' if category == 'error' else 'status' }}">{{ message }}</p>
+            {% endfor %}
         </div>
-        <div class="card">
-            <h3>Book Management</h3>
-            <h2>Active</h2>
+        {% endif %}
+    {% endwith %}
+
+    <section class="stats" aria-label="Library summary">
+        <div class="card stat-card">
+            <h2>{{ available_titles }}</h2>
+            <p>Book titles</p>
         </div>
-        <div class="card">
-            <h3>Database</h3>
-            <h2>Connected</h2>
+        <div class="card stat-card">
+            <h2>{{ available_copies }}</h2>
+            <p>Available copies</p>
+        </div>
+        <div class="card stat-card">
+            <h2>{{ active_loans|length }}</h2>
+            <p>Active loans</p>
         </div>
     </section>
 
-    <section class="card">
-        <h2>Add New Book</h2>
-        <form action="/add" method="POST">
-            <input name="title" placeholder="Book Title" required>
-            <input name="author" placeholder="Author Name" required>
-            <input name="category" placeholder="Category" required>
-            <input name="quantity" type="number" min="0" placeholder="Quantity" required>
-            <button type="submit">+ Add Book</button>
+    <section class="card" id="book-management">
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">CATALOG</p>
+                <h2>Add a book</h2>
+            </div>
+        </div>
+        <form action="{{ url_for('add_book') }}" method="POST" class="form-grid">
+            <label>Book title
+                <input name="title" maxlength="200" required>
+            </label>
+            <label>Author
+                <input name="author" maxlength="200" required>
+            </label>
+            <label>Category
+                <input name="category" maxlength="100" required>
+            </label>
+            <label>Available quantity
+                <input name="quantity" type="number" min="0" step="1" required>
+            </label>
+            <button type="submit">Add book</button>
         </form>
     </section>
 
-    <section class="card">
-        <h2>Search Library</h2>
-        <form action="/" method="GET">
-            <input name="search" value="{{ search }}" placeholder="Search by book title or author">
-            <button type="submit">Search</button>
-            <a href="/">Clear</a>
-        </form>
-    </section>
-
-    <section class="card">
-        <h2>Book Inventory</h2>
+    <section class="card" id="inventory">
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">BOOK MANAGEMENT</p>
+                <h2>Book inventory</h2>
+            </div>
+            <form action="{{ url_for('index') }}" method="GET" class="search-form">
+                <label class="sr-only" for="search">Search books</label>
+                <input id="search" name="search" value="{{ search }}" placeholder="Search title, author or category">
+                <button type="submit">Search</button>
+                {% if search %}<a class="button secondary" href="{{ url_for('index') }}">Clear</a>{% endif %}
+            </form>
+        </div>
         <div class="table-wrapper">
             <table>
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Book Title</th>
+                        <th>Book</th>
                         <th>Author</th>
                         <th>Category</th>
-                        <th>Quantity</th>
+                        <th>Available</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for book in books %}
                     <tr>
-                        <td>{{ book.id }}</td>
                         <td>{{ book.title }}</td>
                         <td>{{ book.author }}</td>
                         <td>{{ book.category }}</td>
                         <td>{{ book.quantity }}</td>
                         <td>
-                            <form action="/edit/{{ book.id }}" method="POST" class="inline-form">
-                                <input type="hidden" name="title" value="{{ book.title }}">
-                                <input type="hidden" name="author" value="{{ book.author }}">
-                                <input type="hidden" name="category" value="{{ book.category }}">
-                                <input type="hidden" name="quantity" value="{{ book.quantity + 1 }}">
-                                <button type="submit">+1 Stock</button>
-                            </form>
-                            <a class="delete" href="/delete/{{ book.id }}" onclick="return confirm('Delete this book?')">Delete</a>
+                            <div class="action-stack">
+                                <form action="{{ url_for('update_stock', book_id=book.id) }}" method="POST" class="stock-form">
+                                    <label class="sr-only" for="stock-{{ book.id }}">Set available stock</label>
+                                    <input id="stock-{{ book.id }}" name="quantity" type="number" min="0" step="1" value="{{ book.quantity }}" required>
+                                    <button type="submit" class="small-button">Update stock</button>
+                                </form>
+                                <form action="{{ url_for('update_stock', book_id=book.id) }}" method="POST" class="inline-form">
+                                    <input type="hidden" name="quantity" value="{{ book.quantity + 1 }}">
+                                    <button type="submit" class="small-button secondary">+1 stock</button>
+                                </form>
+                                <details>
+                                    <summary>Edit details</summary>
+                                    <form action="{{ url_for('edit_book', book_id=book.id) }}" method="POST" class="edit-form">
+                                        <label>Title<input name="title" value="{{ book.title }}" maxlength="200" required></label>
+                                        <label>Author<input name="author" value="{{ book.author }}" maxlength="200" required></label>
+                                        <label>Category<input name="category" value="{{ book.category }}" maxlength="100" required></label>
+                                        <button type="submit" class="small-button">Save details</button>
+                                    </form>
+                                </details>
+                                <form action="{{ url_for('delete_book', book_id=book.id) }}" method="POST" class="inline-form" data-confirm="Delete this book? Borrowing history will be retained.">
+                                    <button type="submit" class="small-button danger-button">Delete</button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     {% else %}
-                    <tr>
-                        <td colspan="6">No books available. Add your first book!</td>
-                    </tr>
+                    <tr><td colspan="5" class="empty-state">No books found. Add a book or change your search.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </section>
 
-</div>
+    <section class="card" id="borrow">
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">CHECKOUT</p>
+                <h2>Borrow books</h2>
+            </div>
+        </div>
+        <form action="{{ url_for('borrow_book') }}" method="POST" class="form-grid" id="borrow-form">
+            <label>Borrower name
+                <input name="borrower_name" maxlength="120" required>
+            </label>
+            <label>Available book
+                <select name="book_id" id="book-select" required {% if not borrowable_books %}disabled{% endif %}>
+                    <option value="">Select a book</option>
+                    {% for book in borrowable_books %}
+                    <option value="{{ book.id }}" data-stock="{{ book.quantity }}">{{ book.title }} ({{ book.quantity }} available)</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>Quantity
+                <input name="quantity" id="borrow-quantity" type="number" min="1" step="1" required {% if not borrowable_books %}disabled{% endif %}>
+            </label>
+            <label>Issue date
+                <input name="issue_date" type="date" value="{{ today }}" required>
+            </label>
+            <label>Expected return date
+                <input name="expected_return_date" type="date" value="{{ today }}" required>
+            </label>
+            <button type="submit" {% if not borrowable_books %}disabled{% endif %}>Record borrowing</button>
+            {% if not borrowable_books %}<p class="form-hint">No books are currently in stock to borrow.</p>{% endif %}
+        </form>
+    </section>
+
+    <section class="card" id="active-loans">
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">CHECK-IN</p>
+                <h2>Active loans</h2>
+            </div>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Borrower</th>
+                        <th>Book</th>
+                        <th>Quantity</th>
+                        <th>Issue date</th>
+                        <th>Expected return</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for loan in active_loans %}
+                    <tr>
+                        <td>{{ loan.borrower_name }}</td>
+                        <td>{{ loan.book_title }}</td>
+                        <td>{{ loan.quantity }}</td>
+                        <td>{{ loan.issue_date }}</td>
+                        <td>{{ loan.expected_return_date }}</td>
+                        <td>
+                            <form action="{{ url_for('return_book', loan_id=loan.id) }}" method="POST" class="inline-form">
+                                <button type="submit" class="small-button">Return</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" class="empty-state">There are no active loans.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="card" id="history">
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">RECORDS</p>
+                <h2>Borrowing history</h2>
+            </div>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Borrower</th>
+                        <th>Book</th>
+                        <th>Quantity</th>
+                        <th>Issue date</th>
+                        <th>Expected return</th>
+                        <th>Actual return</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for loan in history %}
+                    <tr>
+                        <td>{{ loan.borrower_name }}</td>
+                        <td>{{ loan.book_title }}</td>
+                        <td>{{ loan.quantity }}</td>
+                        <td>{{ loan.issue_date }}</td>
+                        <td>{{ loan.expected_return_date }}</td>
+                        <td>{{ loan.actual_return_date or "—" }}</td>
+                        <td><span class="status {{ loan.status|lower }}">{{ loan.status }}</span></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="7" class="empty-state">Borrowing records will appear here.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
 
 <footer>UNAI TECH Virtual Internship Program 2026 | Full Stack Development</footer>
-
 </body>
 </html>
