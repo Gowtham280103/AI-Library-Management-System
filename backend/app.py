@@ -1,22 +1,81 @@
-import os
-from flask import Flask, render_template, jsonify
-from dotenv import load_dotenv
 
-load_dotenv()
+from flask import Flask, render_template, request, redirect, url_for
+from db import get_db_connection, create_table
 
 app = Flask(__name__)
 
-@app.route("/")
-def home():
-    return render_template("index.html")
+create_table()
 
-@app.route("/health")
-def health():
-    return jsonify({"status": "ok", "application": "AI-Enabled Library Management System"})
+@app.route("/")
+def index():
+    search = request.args.get("search", "")
+
+    conn = get_db_connection()
+
+    books = conn.execute(
+        "SELECT * FROM books WHERE title LIKE ? OR author LIKE ?",
+        (f"%{search}%", f"%{search}%")
+    ).fetchall()
+
+    conn.close()
+
+    return render_template("index.html", books=books, search=search)
+
+
+@app.route("/add", methods=["POST"])
+def add_book():
+    title = request.form["title"]
+    author = request.form["author"]
+    category = request.form["category"]
+    quantity = request.form["quantity"]
+
+    conn = get_db_connection()
+
+    conn.execute(
+        "INSERT INTO books (title, author, category, quantity) VALUES (?, ?, ?, ?)",
+        (title, author, category, quantity)
+    )
+
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for("index"))
+
+
+@app.route("/delete/<int:book_id>")
+def delete_book(book_id):
+    conn = get_db_connection()
+
+    conn.execute(
+        "DELETE FROM books WHERE id = ?",
+        (book_id,)
+    )
+
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for("index"))
+
+
+@app.route("/edit/<int:book_id>", methods=["POST"])
+def edit_book(book_id):
+    title = request.form["title"]
+    author = request.form["author"]
+    category = request.form["category"]
+    quantity = request.form["quantity"]
+
+    conn = get_db_connection()
+
+    conn.execute(
+        "UPDATE books SET title=?, author=?, category=?, quantity=? WHERE id=?",
+        (title, author, category, quantity, book_id)
+    )
+
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for("index"))
+
 
 if __name__ == "__main__":
-    app.run(
-        host=os.getenv("FLASK_HOST", "127.0.0.1"),
-        port=int(os.getenv("FLASK_PORT", "5000")),
-        debug=os.getenv("FLASK_DEBUG", "True").lower() == "true"
-    )
+    app.run(debug=True)
