@@ -3,10 +3,9 @@ from contextlib import closing
 from datetime import date
 import os
 
-from flask import Flask, flash, redirect, render_template, request, url_for
-
+from flask import Flask, flash, redirect, render_template, request, url_for, jsonify
 from db import get_db_connection, create_table
-
+from recommendations import recommend_books
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get(
@@ -341,5 +340,29 @@ def return_book(loan_id):
     return redirect(url_for("index"))
 
 
+@app.route("/api/recommendations/<int:book_id>", methods=["GET"])
+def book_recommendations(book_id):
+    try:
+        with closing(get_db_connection()) as conn:
+            recommendations = recommend_books(conn, book_id)
+
+            if recommendations is None:
+                return jsonify({
+                    "success": False,
+                    "message": "Book not found."
+                }), 404
+
+            return jsonify({
+                "success": True,
+                "book_id": book_id,
+                "recommendations": recommendations
+            }), 200
+
+    except Exception:
+        app.logger.exception("Recommendation API failed")
+        return jsonify({
+            "success": False,
+            "message": "Unable to generate recommendations."
+        }), 500
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="127.0.0.1", port=5000, debug=True)

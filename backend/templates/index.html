@@ -140,6 +140,35 @@
         </div>
     </section>
 
+<section class="card" id="recommendations">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">SMART LIBRARY FEATURE</p>
+            <h2>Recommended Books</h2>
+            <p>Discover books similar to your interests.</p>
+        </div>
+    </div>
+
+    <div class="recommendation-controls">
+        <label for="recommend-book">Choose a book</label>
+        <select id="recommend-book">
+            <option value="">Select a book</option>
+            {% for book in books %}
+                <option value="{{ book.id }}">{{ book.title }} - {{ book.author }}</option>
+            {% endfor %}
+        </select>
+        <button type="button" id="recommend-button">
+            Find Recommendations
+        </button>
+    </div>
+
+    <p id="recommendation-message" class="form-hint" aria-live="polite">
+        Select a book to discover similar books.
+    </p>
+
+    <div id="recommendation-results" class="recommendation-grid"></div>
+</section>
+
     <section class="card" id="borrow">
         <div class="section-heading">
             <div>

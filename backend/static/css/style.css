@@ -383,3 +383,53 @@ footer {
         flex: 1 1 100%;
     }
 }
+
+.recommendation-controls {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: end;
+    max-width: 650px;
+}
+
+.recommendation-controls label {
+    grid-column: 1 / -1;
+}
+
+.recommendation-controls select {
+    min-height: 42px;
+    padding: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+}
+
+.recommendation-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.recommendation-card {
+    padding: 18px;
+    border: 1px solid #dbeafe;
+    border-radius: 10px;
+    background: #f8fafc;
+}
+
+.recommendation-card h3 {
+    margin-top: 0;
+    color: #1d4ed8;
+}
+
+.recommendation-card p {
+    color: #475569;
+    font-size: 14px;
+}
+
+@media (max-width: 600px) {
+    .recommendation-controls {
+        grid-template-columns: 1fr;
+    }
+}
+
