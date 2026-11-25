@@ -32,3 +32,55 @@ From the project directory:
 ```
 
 Tests use a temporary SQLite database and do not modify `library.db`.
+
+## Database Design & Integration
+
+### Database Used
+- SQLite
+- Database file: `library.db`
+- Backend integration: Python and Flask
+
+### Database Tables
+
+**1. Books**
+
+| Column | Data Type | Description |
+|---|---|---|
+| id | INTEGER | Primary key |
+| title | TEXT | Book title |
+| author | TEXT | Author name |
+| category | TEXT | Book category |
+| quantity | INTEGER | Available quantity |
+
+**2. Loans**
+
+| Column | Data Type | Description |
+|---|---|---|
+| id | INTEGER | Primary key |
+| book_id | INTEGER | Foreign key referencing books.id |
+| book_title | TEXT | Book title |
+| borrower_name | TEXT | Borrower's name |
+| quantity | INTEGER | Borrowed quantity |
+| issue_date | TEXT | Issue date |
+| expected_return_date | TEXT | Expected return date |
+| actual_return_date | TEXT | Actual return date |
+| status | TEXT | Loan status |
+
+### Database Relationship
+The books and loans tables are connected through `books.id` and `loans.book_id`. One book can have multiple loan records.
+
+### CRUD Operations
+- **Create:** Inserted a temporary test book.
+- **Read:** Retrieved the inserted book record.
+- **Update:** Changed its quantity from 5 to 10.
+- **Delete:** Successfully deleted the temporary test book.
+
+### Database Connectivity
+The application uses Python's SQLite3 module to connect to the SQLite database and execute SQL queries.
+
+### Testing Result
+All four CRUD operations were successfully tested. The original book record remained unchanged after the temporary test record was deleted.
+
+### Conclusion
+The database structure and integration were verified successfully. The application can store, retrieve, update and delete library records using SQLite.
+
